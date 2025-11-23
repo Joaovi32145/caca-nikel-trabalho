@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Caça-Níquel Arcane</title>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+    <!-- Menu Inicial -->
+    <div id="menu">
+        <h1>🎰 Caça-Níquel Arcane</h1>
+        <button id="btn-jogar">Jogar</button>
+        <button id="btn-ranking">Ranking</button>
+    </div>
+
+    <!-- Tela do Jogo -->
+    <div id="jogo" class="escondido">
+        <h2>Essências Hextech: <span id="essencias"></span></h2>
+        <div id="rolos">
+            <div id="rolo1" class="rolo">?</div>
+            <div id="rolo2" class="rolo">?</div>
+            <div id="rolo3" class="rolo">?</div>
+        </div>
+        <button id="btn-girar">Girar</button>
+        <button id="btn-voltar">Voltar ao Menu</button>
+    </div>
+
+    <!-- Tela de Ranking -->
+    <div id="ranking" class="escondido">
+        <h2>🏆 Ganhadores</h2>
+        <ul id="lista-ranking"></ul>
+        <button id="btn-resetar-ranking">Apagar Histórico</button>
+        <button id="btn-voltar-ranking">Voltar ao Menu</button>
+    </div>
+
+    <script src="jogo.js"></script>
+</body>
+</html>
