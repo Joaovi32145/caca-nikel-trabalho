@@ -8,16 +8,28 @@ const rolos = [
 const mensagem = document.getElementById('mensagem');
 
 const simbolos = ['🧨','💣','⚡','🔫','💥','🔧','🩸'];
-let essencias = 5; // apenas 5 tentativas
+let essencias = 5;
 let girando = false;
 
-const somFim = new Audio('https://www.myinstants.com/media/sounds/bo-womp.mp3'); // derrota
-const somVitoria = new Audio('https://www.myinstants.com/media/sounds/139-item-catch.mp3'); // vitória
-const somGiro = new Audio('https://www.myinstants.com/media/sounds/low-hp-pokemon.mp3'); // girando
+const somFim = new Audio('https://www.myinstants.com/media/sounds/bo-womp.mp3');
+const somVitoria = new Audio('https://www.myinstants.com/media/sounds/139-item-catch.mp3');
+const somGiro = new Audio('https://www.myinstants.com/media/sounds/low-hp-pokemon.mp3');
 somFim.preload = 'auto';
 somVitoria.preload = 'auto';
 somGiro.preload = 'auto';
 somGiro.loop = true;
+
+let audiosPreparados = false;
+function prepararAudios() {
+    if (audiosPreparados) return;
+    [somGiro, somVitoria, somFim].forEach(audio => {
+        audio.volume = 0;
+        audio.play().then(() => audio.pause());
+        audio.currentTime = 0;
+        audio.volume = 1;
+    });
+    audiosPreparados = true;
+}
 
 essenciasSpan.textContent = essencias;
 mensagem.textContent = "Puxe a alavanca e boa sorte!";
@@ -57,7 +69,6 @@ function animarRolosCurto(duration = 900, interval = 80) {
 
 async function girar() {
     if (girando) return;
-
     if (essencias <= 0) {
         mensagem.textContent = "Sem tentativas — reiniciando...";
         somFim.currentTime = 0;
@@ -66,20 +77,14 @@ async function girar() {
         resetJogo();
         return;
     }
-
     bloquearBotao();
     mensagem.textContent = "Girando...";
-
     somGiro.currentTime = 0;
     somGiro.play();
-
     essencias--;
     essenciasSpan.textContent = essencias;
-
     await animarRolosCurto(1000, 80);
-
     somGiro.pause();
-
     const resultado = [];
     for (let i = 0; i < 3; i++) {
         const idx = Math.random() < 0.5 && resultado.length
@@ -88,19 +93,18 @@ async function girar() {
         resultado.push(simbolos[idx]);
         rolos[i].textContent = simbolos[idx];
     }
-
     if (resultado[0] === resultado[1] && resultado[1] === resultado[2]) {
         mensagem.textContent = "🏆 Vitória!";
         somVitoria.currentTime = 0;
-        somVitoria.play(); // toca som de vitória
+        somVitoria.play();
         piscarCabine();
-        await sleep(1500); // símbolos finais ficam mais tempo apenas na vitória
+        await sleep(1500);
         resetJogo();
     } else {
         if (essencias <= 0) {
             mensagem.textContent = "💥 Acabaram as tentativas. Reiniciando...";
             somFim.currentTime = 0;
-            somFim.play(); // som de derrota
+            somFim.play();
             await sleep(800);
             resetJogo();
         } else {
@@ -120,7 +124,7 @@ function piscarCabine() {
 }
 
 function resetJogo() {
-    essencias = 5; // reset para 5 tentativas
+    essencias = 5;
     essenciasSpan.textContent = essencias;
     rolos.forEach(r => r.textContent = '?');
     mensagem.textContent = "Puxe a alavanca e boa sorte!";
@@ -133,12 +137,14 @@ function sleep(ms) {
 
 btnGirar.addEventListener('click', e => {
     e.preventDefault();
+    prepararAudios();
     girar();
 });
 
 window.addEventListener('keydown', e => {
     if (e.code === 'Space') {
         e.preventDefault();
+        prepararAudios();
         girar();
     }
 });
