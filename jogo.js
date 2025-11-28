@@ -8,7 +8,7 @@ const rolos = [
 const mensagem = document.getElementById('mensagem');
 
 const simbolos = ['🧨','💣','⚡','🔫','💥','🔧','🩸'];
-let essencias = 5;
+let essencias = 5; // apenas 5 tentativas
 let girando = false;
 
 const somFim = new Audio('https://www.myinstants.com/media/sounds/bo-womp.mp3'); // derrota
@@ -78,7 +78,6 @@ async function girar() {
 
     await animarRolosCurto(1000, 80);
 
-    // Para o som de giro
     somGiro.pause();
 
     const resultado = [];
