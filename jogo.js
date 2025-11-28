@@ -1,147 +1,147 @@
-// Elementos
-const menu = document.getElementById('menu');
-const jogoDiv = document.getElementById('jogo');
-const rankingDiv = document.getElementById('ranking');
-
+const btnGirar = document.getElementById('btn-girar');
 const essenciasSpan = document.getElementById('essencias');
-let essencias = 10;
-
 const rolos = [
     document.getElementById('rolo1'),
     document.getElementById('rolo2'),
     document.getElementById('rolo3')
 ];
+const mensagem = document.getElementById('mensagem');
 
-// Botões
-document.getElementById('btn-jogar').onclick = () => mostrarTela(jogoDiv);
-document.getElementById('btn-ranking').onclick = () => { atualizarRanking(); mostrarTela(rankingDiv); };
-document.getElementById('btn-voltar').onclick = () => mostrarTela(menu);
-document.getElementById('btn-voltar-ranking').onclick = () => mostrarTela(menu);
-document.getElementById('btn-girar').onclick = girar;
-
-// Reset do ranking com senha
-document.getElementById('btn-resetar-ranking').addEventListener('click', () => {
-    const senha = prompt("Digite a senha para apagar o histórico:");
-    if (senha === "123") {
-        localStorage.removeItem('ganhadores');
-        atualizarRanking();
-        alert("✅ Histórico de ganhadores apagado!");
-    } else if (senha !== null) {
-        alert("❌ Senha incorreta!");
-    }
-});
-
-// Símbolos do caça-níquel (emojis Arcane)
 const simbolos = ['🧨','💣','⚡','🔫','💥','🔧','🩸'];
+let essencias = 5;
+let girando = false;
 
-// Funções principais
-function mostrarTela(tela) {
-    menu.classList.add('escondido');
-    jogoDiv.classList.add('escondido');
-    rankingDiv.classList.add('escondido');
-    tela.classList.remove('escondido');
+const somFim = new Audio('https://www.myinstants.com/media/sounds/bo-womp.mp3'); // derrota
+const somVitoria = new Audio('https://www.myinstants.com/media/sounds/139-item-catch.mp3'); // vitória
+const somGiro = new Audio('https://www.myinstants.com/media/sounds/low-hp-pokemon.mp3'); // girando
+somFim.preload = 'auto';
+somVitoria.preload = 'auto';
+somGiro.preload = 'auto';
+somGiro.loop = true;
+
+essenciasSpan.textContent = essencias;
+mensagem.textContent = "Puxe a alavanca e boa sorte!";
+
+function bloquearBotao() {
+    girando = true;
+    btnGirar.setAttribute('disabled','');
 }
 
-function resetJogo() {
-    essencias = 10;
-    essenciasSpan.textContent = essencias;
-    rolos.forEach(r => r.textContent = '?');
+function desbloquearBotao() {
+    girando = false;
+    btnGirar.removeAttribute('disabled');
 }
 
-// Salva ganhador com contagem de vitórias
-function salvarGanhador(nome) {
-    let ganhadores = JSON.parse(localStorage.getItem('ganhadores')) || [];
-    const existente = ganhadores.find(g => g.nome === nome);
-    if (existente) {
-        existente.vitorias++;
-    } else {
-        ganhadores.push({nome, vitorias: 1});
-    }
-    localStorage.setItem('ganhadores', JSON.stringify(ganhadores));
-}
-
-// Atualiza ranking no HTML
-function atualizarRanking() {
-    let ganhadores = JSON.parse(localStorage.getItem('ganhadores')) || [];
-    const lista = document.getElementById('lista-ranking');
-    lista.innerHTML = '';
-    ganhadores.forEach(g => {
-        const li = document.createElement('li');
-        li.textContent = g.vitorias > 1 ? `${g.nome} (${g.vitorias})` : g.nome;
-        lista.appendChild(li);
+function animarRolosCurto(duration = 900, interval = 80) {
+    return new Promise(resolve => {
+        rolos.forEach(r => r.classList.add('spin'));
+        let elapsed = 0;
+        const anim = setInterval(() => {
+            rolos.forEach(r => {
+                const idx = Math.floor(Math.random() * simbolos.length);
+                r.textContent = simbolos[idx];
+                r.style.transform = `translateY(${Math.random()*18-9}px)`;
+            });
+            elapsed += interval;
+            if (elapsed >= duration) {
+                clearInterval(anim);
+                rolos.forEach(r => {
+                    r.style.transform = 'translateY(0px)';
+                    r.classList.remove('spin');
+                });
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }
+        }, interval);
     });
 }
 
-// Giro do caça-níquel com animação
-function girar() {
-    if (essencias <= 1) {
-        alert("💥 Suas Essências Hextech acabaram!");
-        if (confirm("Deseja tentar novamente?")) resetJogo();
-        else mostrarTela(menu);
+async function girar() {
+    if (girando) return;
+
+    if (essencias <= 0) {
+        mensagem.textContent = "Sem tentativas — reiniciando...";
+        somFim.currentTime = 0;
+        somFim.play();
+        await sleep(600);
+        resetJogo();
         return;
     }
+
+    bloquearBotao();
+    mensagem.textContent = "Girando...";
+
+    somGiro.currentTime = 0;
+    somGiro.play();
 
     essencias--;
     essenciasSpan.textContent = essencias;
 
-    // Animação: gira por 1 segundo
-    let passos = 10;
-    let intervalo = 100;
-    let cont = 0;
+    await animarRolosCurto(1000, 80);
 
-    let anim = setInterval(() => {
-        rolos.forEach(r => {
-            const idx = Math.floor(Math.random() * simbolos.length);
-            r.textContent = simbolos[idx];
-            r.style.transform = `translateY(${Math.random()*20-10}px)`; // leve movimento vertical
-        });
-        cont++;
-        if (cont >= passos) {
-            clearInterval(anim);
-            pararRolos(simbolos);
-        }
-    }, intervalo);
-}
+    // Para o som de giro
+    somGiro.pause();
 
-// Função para parar os rolos e verificar vitória
-function pararRolos(simbolos) {
-    let resultado = [];
-    for (let i = 0; i < 2; i++) {
-        const idx = Math.floor(Math.random() * simbolos.length);
+    const resultado = [];
+    for (let i = 0; i < 3; i++) {
+        const idx = Math.random() < 0.5 && resultado.length
+            ? simbolos.indexOf(resultado[i-1])
+            : Math.floor(Math.random() * simbolos.length);
+        resultado.push(simbolos[idx]);
         rolos[i].textContent = simbolos[idx];
-        rolos[i].style.transform = `translateY(0px)`;
-        resultado.push(simbolos[idx]);
     }
 
-    // Terceiro rolo com 35% chance de repetir o primeiro (mais fácil ganhar)
-    if (Math.random() < 0.35) {
-        rolos[2].textContent = resultado[0];
-        resultado.push(resultado[0]);
+    if (resultado[0] === resultado[1] && resultado[1] === resultado[2]) {
+        mensagem.textContent = "🏆 Vitória!";
+        somVitoria.currentTime = 0;
+        somVitoria.play(); // toca som de vitória
+        piscarCabine();
+        await sleep(1500); // símbolos finais ficam mais tempo apenas na vitória
+        resetJogo();
     } else {
-        const idx = Math.floor(Math.random() * simbolos.length);
-        rolos[2].textContent = simbolos[idx];
-        resultado.push(simbolos[idx]);
-    }
-    rolos[2].style.transform = `translateY(0px)`;
-
-    const counts = {};
-    resultado.forEach(s => counts[s] = (counts[s] || 0) + 1);
-
-    // Delay de 1 segundo antes de mostrar vitória ou derrota
-    setTimeout(() => {
-        if (Object.values(counts).includes(3)) {
-            alert("🏆 Você dominou a Zaun! Vitória!");
-            let nome = prompt("Digite seu nome de Inventor:") || "Anônimo";
-            salvarGanhador(nome);
+        if (essencias <= 0) {
+            mensagem.textContent = "💥 Acabaram as tentativas. Reiniciando...";
+            somFim.currentTime = 0;
+            somFim.play(); // som de derrota
+            await sleep(800);
             resetJogo();
-            if (!confirm("Deseja tentar novamente?")) mostrarTela(menu);
-        } else if (essencias <= 1) {
-            alert("💥 Você perdeu todas as Essências Hextech!");
-            resetJogo();
-            if (!confirm("Deseja tentar novamente?")) mostrarTela(menu);
+        } else {
+            mensagem.textContent = "Tente de novo!";
+            desbloquearBotao();
         }
-    }, 1000);
+    }
 }
 
-// Inicializa
-essenciasSpan.textContent = essencias;
+function piscarCabine() {
+    const cabine = document.querySelector('.cabine');
+    cabine.animate([
+        { boxShadow: '0 12px 36px rgba(255,215,0,0.12)' },
+        { boxShadow: '0 40px 90px rgba(255,215,0,0.22)' },
+        { boxShadow: '0 12px 36px rgba(255,215,0,0.12)' }
+    ], { duration: 600 });
+}
+
+function resetJogo() {
+    essencias = 5; // reset para 5 tentativas
+    essenciasSpan.textContent = essencias;
+    rolos.forEach(r => r.textContent = '?');
+    mensagem.textContent = "Puxe a alavanca e boa sorte!";
+    desbloquearBotao();
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+btnGirar.addEventListener('click', e => {
+    e.preventDefault();
+    girar();
+});
+
+window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        girar();
+    }
+});
+
+desbloquearBotao();
